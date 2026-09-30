@@ -1,0 +1,222 @@
+{
+  "theme": "light",
+  "archetype": "swiss_high_contrast_with_tactical_precision",
+  "colors": {
+    "surfaces": [
+      {
+        "name": "page",
+        "kind": "solid",
+        "bg": "#F8FAFC",
+        "on_bg": "#0F172A",
+        "on_bg_muted": "#475569",
+        "roles": {
+          "link": "#4338CA",
+          "error": "#B91C1C",
+          "success": "#047857",
+          "warning": "#B45309"
+        }
+      },
+      {
+        "name": "sidebar",
+        "kind": "solid",
+        "bg": "#0F172A",
+        "on_bg": "#F8FAFC",
+        "on_bg_muted": "#94A3B8",
+        "roles": {
+          "active_item": "#38BDF8",
+          "active_bg": "#1E293B",
+          "badge_bg": "#312E81",
+          "badge_text": "#C7D2FE"
+        }
+      },
+      {
+        "name": "panel",
+        "kind": "solid",
+        "bg": "#FFFFFF",
+        "on_bg": "#0F172A",
+        "on_bg_muted": "#64748B",
+        "roles": {
+          "border": "#E2E8F0",
+          "border_subtle": "#F1F5F9",
+          "hover_bg": "#F8FAFC"
+        }
+      },
+      {
+        "name": "subtle_well",
+        "kind": "solid",
+        "bg": "#F1F5F9",
+        "on_bg": "#0F172A",
+        "on_bg_muted": "#475569"
+      },
+      {
+        "name": "header_glass",
+        "kind": "glass",
+        "contrast_against": "#FFFFFF",
+        "guarantee": "backdrop-blur-md bg-white/90 border-b border-slate-200 shadow-xs",
+        "on_bg": "#0F172A",
+        "on_bg_muted": "#64748B",
+        "roles": {
+          "verified_badge_bg": "#ECFDF5",
+          "verified_badge_text": "#065F46",
+          "verified_badge_border": "#A7F3D0"
+        }
+      },
+      {
+        "name": "ledger_pill",
+        "kind": "solid",
+        "bg": "#ECFDF5",
+        "on_bg": "#065F46",
+        "on_bg_muted": "#047857",
+        "roles": {
+          "verified_icon": "#059669"
+        }
+      },
+      {
+        "name": "quarantine_alert_panel",
+        "kind": "solid",
+        "bg": "#FEF2F2",
+        "on_bg": "#991B1B",
+        "on_bg_muted": "#7F1D1D",
+        "roles": {
+          "malicious_span_bg": "#FEE2E2",
+          "malicious_span_border": "#EF4444",
+          "malicious_span_text": "#991B1B"
+        }
+      },
+      {
+        "name": "diff_deletion",
+        "kind": "solid",
+        "bg": "#FEE2E2",
+        "on_bg": "#991B1B",
+        "on_bg_muted": "#7F1D1D"
+      },
+      {
+        "name": "diff_addition",
+        "kind": "solid",
+        "bg": "#DCFCE7",
+        "on_bg": "#166534",
+        "on_bg_muted": "#14532D"
+      },
+      {
+        "name": "confidence_high",
+        "kind": "solid",
+        "bg": "#0D9488",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#CCFBF1"
+      },
+      {
+        "name": "confidence_medium",
+        "kind": "solid",
+        "bg": "#D97706",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#FEF3C7"
+      },
+      {
+        "name": "confidence_low",
+        "kind": "solid",
+        "bg": "#E11D48",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#FFE4E6"
+      }
+    ],
+    "accent": "#4F46E5",
+    "on_accent": "#FFFFFF",
+    "secondary_accent": "#0D9488",
+    "on_secondary_accent": "#FFFFFF",
+    "neutral_dark": "#0F172A",
+    "neutral_light": "#F8FAFC"
+  },
+  "typography": {
+    "font_heading": "'Plus Jakarta Sans Variable', sans-serif",
+    "font_body": "'Plus Jakarta Sans Variable', sans-serif",
+    "font_mono": "'JetBrains Mono Variable', monospace",
+    "scale_px": {
+      "display": 48,
+      "h1": 36,
+      "h2": 28,
+      "h3": 20,
+      "body": 16,
+      "caption": 14
+    },
+    "letter_spacing": {
+      "headings": "tracking-tight",
+      "labels": "tracking-[0.15em] uppercase font-semibold text-xs",
+      "mono_hashes": "tracking-wider font-mono text-xs"
+    }
+  },
+  "entry_surfaces": {
+    "/": "command center layout — top header with status badge and auto-heal toggle, 5 key metric cards, horizontal diagnostic pipeline strip, findings chart and recent audit stream",
+    "/login": "split branded authentication — deep slate governance assurance panel with ledger verification stats left, clean direct credential card right",
+    "/setup": "stepped initial bootstrap — single centered high-trust card with admin credential creation and ledger root initialization",
+    "/review": "tri-pane triage workspace — filter bar top, findings table/list left, interactive side-by-side diff comparison and action synthesis panel right",
+    "/poison-lab": "tactical threat workbench — interactive payload injector top, real-time quarantine inspector with red-annotated attack spans and live KB claim stability comparison bottom",
+    "/ledger": "cryptographic audit explorer — document version selector with verified hash-chain timeline, deep version diff viewer, and 1-click admin rollback",
+    "/eval": "rigorous benchmark suite — run-test launcher, per-fault precision/recall/F1 matrix table, clean FPR indicator, and synthetic-corpus disclaimer banner",
+    "/audit": "immutable event feed — cryptographic action filter, search by doc/hash/user, and expandable block payload viewer",
+    "/admin": "governance configuration hub — user role matrix, source domain trust rating table, confidence thresholds slider group, and LLM/Gemini connector status"
+  },
+  "grids": {
+    "dashboard_kpis": "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4",
+    "pipeline_strip": "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3",
+    "dashboard_content": "grid grid-cols-1 lg:grid-cols-12 gap-6",
+    "review_layout": "grid grid-cols-1 xl:grid-cols-12 gap-6",
+    "diff_view": "grid grid-cols-1 md:grid-cols-2 gap-4",
+    "poison_workbench": "grid grid-cols-1 lg:grid-cols-12 gap-6",
+    "eval_metrics_grid": "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4",
+    "admin_sections": "grid grid-cols-1 lg:grid-cols-2 gap-6"
+  },
+  "layouts": {
+    "sidebar_width": "w-64",
+    "sidebar_collapsed": "w-18",
+    "content_max_width": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6",
+    "header_height": "h-16"
+  },
+  "motion": {
+    "transitions": "transition-colors duration-150 ease-out, transition-shadow duration-150 ease-out, transition-opacity duration-150 ease-out",
+    "hover_lift": "hover:-translate-y-0.5 hover:shadow-md transition-all duration-200",
+    "pulse_glow": "animate-pulse",
+    "tab_switch": "transition-all duration-200 ease-in-out"
+  },
+  "accessibility": {
+    "color_contrast": "All text tokens meet WCAG AA (>= 4.5:1 on solid surfaces, >= 7:1 for dark slate sidebar).",
+    "focus_states": "focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 focus-visible:outline-none",
+    "screen_readers": "aria-live regions for scan triggers, live pipeline counters, and toast notifications. Full aria-labels on icon-only buttons."
+  },
+  "image_urls": [],
+  "component_specs": {
+    "LedgerVerifiedBadge": {
+      "description": "Always-visible header pill indicating cryptographic hash-chain integrity",
+      "test_id": "badge-ledger-verified",
+      "states": ["verified_green", "verifying_pulse", "tamper_detected_red"]
+    },
+    "ConfidenceBar": {
+      "description": "0.0 to 1.0 confidence bar with fixed visual marker lines at 0.40 (human review threshold) and 0.80 (auto-apply threshold)",
+      "test_id": "confidence-bar-indicator",
+      "thresholds": {"human_triage": 0.40, "auto_apply": 0.80}
+    },
+    "WordDiffViewer": {
+      "description": "Side-by-side or inline word-level diff component for document comparison and proposed synthesis",
+      "test_id": "word-diff-container"
+    },
+    "PoisonSpanHighlighter": {
+      "description": "Text viewer highlighting injection markers, zero-width spaces, and hidden markup with exact byte offsets",
+      "test_id": "poison-malicious-span"
+    },
+    "PipelineStrip": {
+      "description": "Horizontal state machine showing doc flow: Ingested -> Quarantined -> Claims Indexed -> Candidate Pairs -> Auto-Fixed -> Awaiting Human",
+      "test_id": "pipeline-diagnostic-strip"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Follow the theme: Light mode default with crisp slate (#F8FAFC) canvas, stark white panels (#FFFFFF), crisp 1px borders (#E2E8F0), royal indigo (#4F46E5) primary buttons/accents, and emerald/teal (#0D9488 / #059669) for verification & ledger health.",
+    "Sidebar: Deep Navy/Slate (#0F172A) with crisp contrasting navigation items, active state indicator in cyan/sky (#38BDF8), and an always-visible app brand with version tag.",
+    "Header: Glassmorphic with sticky z-40 positioning, displaying the always-visible Ledger-Verified badge with verified block height, live Auto-Apply toggle switch, quick 'Run Scan' action button, and User Profile / Logout control.",
+    "Confidence Bar: Always render marker notches at 0.40 ('Human Review' zone) and 0.80 ('Auto-Apply' zone). Color code: <0.40 red/rose, 0.40-0.79 amber/orange, >=0.80 teal/emerald.",
+    "Poison Lab: Provide interactive payload presets (e.g. 'Hidden Prompt Injection', 'Zero-Width Char Exploit', 'Contradictory Claim Spoof', 'System Override'). Highlight detected attack segments with high-visibility red pill backgrounds (#FEE2E2 with #B91C1C text and #EF4444 border).",
+    "Review Queue: Include Compare, Genealogy, and Resolve tabs. In Resolve tab, provide one-click 'Accept Proposed Fix', 'Keep Both', 'Hold for Second Reviewer', 'Reject Fix', plus an interactive 'Synthesize New Text' editor with LLM prompt preview.",
+    "Ledger & Rollback: Show interactive block list with SHA-256 hashes (e.g. `e3b0c44...`), timestamp, author, previous block hash, and a 'Rollback to this Version' modal dialog for admins with confirmation.",
+    "Evaluation Page: Render clear disclaimer banner: 'Note: Synthetic evaluation corpus benchmark metrics reflect offline test suites and not live production variance.' Display Precision, Recall, F1 score cards per fault type (Contradiction, Duplicate, Stale, Unsupported, Prompt Injection).",
+    "Seed Data & Demo Corpus: Include a 'Load Demo Corpus' button on the dashboard that pre-populates rich documents across all fault types and attack scenarios for immediate verification and review triage.",
+    "Ensure every button, link, input, select, and status chip has a descriptive `data-testid` attribute (e.g. `data-testid='btn-run-scan'`, `data-testid='toggle-auto-apply'`, `data-testid='btn-accept-fix'`)."
+  ]
+}
