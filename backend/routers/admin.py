@@ -7,10 +7,12 @@ from fastapi.responses import PlainTextResponse
 from lib.dataset import TEMPLATE_CSV, DatasetError, import_dataset
 from lib.deps import require_admin, require_viewer
 from lib.llm import embeddings_provider, ping as llm_ping, provider as llm_provider
+from lib.corpus import active_corpus, load_corpus
 from lib.real_corpus import load_real
 from lib.seed_corpus import load_demo
 from lib.settings import get_settings, save_settings
-from models.models import AutoApplyToggle, CorpusLoadResult, ThresholdsUpdate, TrustUpdate
+from models.models import (AutoApplyToggle, CorpusLoadReport, CorpusLoadRequest, CorpusLoadResult,
+                           CorpusState, ThresholdsUpdate, TrustUpdate)
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # request size limit (spec 3)
 
@@ -47,6 +49,23 @@ async def real_corpus_load(user: dict = Depends(require_admin)) -> CorpusLoadRes
     """Load the real-world corpus: excerpts of genuinely published public documents.
     Only a small slice carries ground-truth labels; the rest is ingested unlabeled."""
     return CorpusLoadResult(**await load_real(user["username"]))
+
+
+@router.get("/admin/corpus", response_model=CorpusState)
+async def corpus_state(_: dict = Depends(require_viewer)) -> CorpusState:
+    """Which corpus is currently loaded, and whether it has been scanned yet."""
+    return CorpusState(**await active_corpus())
+
+
+@router.post("/admin/corpus/load", response_model=CorpusLoadReport)
+async def corpus_load(body: CorpusLoadRequest, user: dict = Depends(require_admin)) -> CorpusLoadReport:
+    """Load the chosen corpus. `replace` (default) clears the previous knowledge base —
+    documents, versions, claims, findings, scan runs, labels — then ingests fresh, so the
+    dashboard stays empty until a scan is run. The audit chain is never cleared."""
+    try:
+        return CorpusLoadReport(**await load_corpus(body.corpus, body.replace, user["username"]))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
 
 
 @router.get("/admin/llm-status")

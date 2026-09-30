@@ -8,6 +8,7 @@ import { apiGet, apiPost } from "@/lib/api";
 import type { CorpusLoadResult, Stats, User } from "@/lib/types";
 import { formatError, RunScanButton } from "@/components/AppShell";
 import { BulkUploadCard } from "@/components/BulkUploadCard";
+import { CorpusCard } from "@/components/CorpusCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -43,37 +44,6 @@ export default function Dashboard() {
   const role = me.data?.role ?? "viewer";
   const isAdmin = role === "admin";
 
-  const demo = useMutation({
-    mutationFn: () => apiPost<{ ingested: number; quarantined: number; labels: number }>("/admin/demo/load"),
-    onSuccess: (r) => {
-      toast.success(`Demo corpus loaded — ${r.ingested} docs ingested, ${r.quarantined} quarantined, ${r.labels} labels`);
-      qc.invalidateQueries({ queryKey: ["stats"] });
-      qc.invalidateQueries({ queryKey: ["documents"] });
-      qc.invalidateQueries({ queryKey: ["ledger", "verify"] });
-    },
-    onError: (e) => toast.error(formatError(e)),
-  });
-
-  const realCorpus = useMutation({
-    mutationFn: () => apiPost<CorpusLoadResult>("/admin/real-corpus/load"),
-    onSuccess: (r) => {
-      if (r.ingested === 0) {
-        toast.info("Real-world corpus is already loaded", {
-          description: `All 30 documents are already in the knowledge base (${r.docs_total} documents total) · ${r.labels} ground-truth labels refreshed. Nothing was duplicated — run a scan to re-detect faults.`,
-        });
-      } else {
-        toast.success(`Real-world corpus loaded — ${r.ingested} documents ingested`, {
-          description: `${r.quarantined} quarantined · ${r.labels} ground-truth labels · the rest is unlabeled real data. Run a scan next.`,
-        });
-      }
-      qc.invalidateQueries({ queryKey: ["stats"] });
-      qc.invalidateQueries({ queryKey: ["documents"] });
-      qc.invalidateQueries({ queryKey: ["ledger", "verify"] });
-      qc.invalidateQueries({ queryKey: ["evaluation"] });
-    },
-    onError: (e) => toast.error(formatError(e)),
-  });
-
   const s = stats.data;
   const chartData = FINDING_TYPES.map((t) => ({ type: t, count: s?.findings_by_type?.[t] ?? 0 }));
 
@@ -87,31 +57,11 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {isAdmin && (
-            <Button
-              variant="default"
-              size="sm"
-              data-testid="btn-load-real-corpus"
-              disabled={realCorpus.isPending}
-              onClick={() => realCorpus.mutate()}
-            >
-              {realCorpus.isPending ? "Loading…" : "Load real-world corpus"}
-            </Button>
-          )}
-          {isAdmin && (
-            <Button
-              variant="outline"
-              size="sm"
-              data-testid="btn-load-demo-corpus"
-              disabled={demo.isPending}
-              onClick={() => demo.mutate()}
-            >
-              Load demo corpus
-            </Button>
-          )}
           {role !== "viewer" && <RunScanButton disabled={false} />}
         </div>
       </div>
+
+      <CorpusCard isAdmin={isAdmin} />
 
       {/* KPI cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">

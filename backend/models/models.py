@@ -158,6 +158,30 @@ class BulkUploadResult(BaseModel):
     docs_total: int
 
 
+class CorpusLoadRequest(BaseModel):
+    corpus: str
+    replace: bool = True
+
+
+class CorpusState(BaseModel):
+    active: str | None = None
+    loaded_at: str | None = None
+    documents: int
+    scanned: bool
+
+
+class CorpusLoadReport(BaseModel):
+    corpus: str
+    label: str
+    replaced: bool
+    cleared_documents: int
+    ingested: int
+    quarantined: int
+    labels: int
+    docs_total: int
+    loaded_at: str
+
+
 class CorpusLoadResult(BaseModel):
     ingested: int
     quarantined: int

@@ -159,6 +159,25 @@ export interface CorpusLoadResult {
   docs_total: number;
 }
 
+export interface CorpusState {
+  active: "demo" | "real" | null;
+  loaded_at: string | null;
+  documents: number;
+  scanned: boolean;
+}
+
+export interface CorpusLoadResult {
+  corpus: string;
+  label: string;
+  replaced: boolean;
+  cleared_documents: number;
+  ingested: number;
+  quarantined: number;
+  labels: number;
+  docs_total: number;
+  loaded_at: string;
+}
+
 export interface EvalCoverage {
   total_docs: number;
   labeled_docs: number;

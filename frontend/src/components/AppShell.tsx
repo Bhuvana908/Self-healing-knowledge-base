@@ -106,6 +106,7 @@ export function RunScanButton({ disabled }: { disabled: boolean }) {
         description: `${r.claims} claims · ${r.pairs} candidate pairs · ${r.seconds}s`,
       });
       qc.invalidateQueries({ queryKey: ["stats"] });
+      qc.invalidateQueries({ queryKey: ["corpus"] });
       qc.invalidateQueries({ queryKey: ["conflicts"] });
       qc.invalidateQueries({ queryKey: ["ledger", "verify"] });
     },
