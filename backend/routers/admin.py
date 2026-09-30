@@ -7,9 +7,10 @@ from fastapi.responses import PlainTextResponse
 from lib.dataset import TEMPLATE_CSV, DatasetError, import_dataset
 from lib.deps import require_admin, require_viewer
 from lib.llm import embeddings_provider, ping as llm_ping, provider as llm_provider
+from lib.real_corpus import load_real
 from lib.seed_corpus import load_demo
 from lib.settings import get_settings, save_settings
-from models.models import AutoApplyToggle, ThresholdsUpdate, TrustUpdate
+from models.models import AutoApplyToggle, CorpusLoadResult, ThresholdsUpdate, TrustUpdate
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # request size limit (spec 3)
 
@@ -39,6 +40,13 @@ async def toggle_auto_apply(body: AutoApplyToggle, user: dict = Depends(require_
 @router.post("/admin/demo/load")
 async def demo_load(user: dict = Depends(require_admin)) -> dict:
     return await load_demo(user["username"])
+
+
+@router.post("/admin/real-corpus/load", response_model=CorpusLoadResult)
+async def real_corpus_load(user: dict = Depends(require_admin)) -> CorpusLoadResult:
+    """Load the real-world corpus: excerpts of genuinely published public documents.
+    Only a small slice carries ground-truth labels; the rest is ingested unlabeled."""
+    return CorpusLoadResult(**await load_real(user["username"]))
 
 
 @router.get("/admin/llm-status")

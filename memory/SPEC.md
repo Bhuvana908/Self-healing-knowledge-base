@@ -38,6 +38,23 @@ uncertain ones to humans, records everything on hash-chained append-only ledgers
 - Thresholds: auto_apply 0.80, human_min 0.40, duplicate_sim 0.80, conflict_sim 0.60,
   llm_band_sim 0.45, knn_k 8, stale_days 365, embedding_weight 0.5, winner gaps 0.05/30d.
 
+## Corpora & uploads
+- **Real-world corpus** (`lib/real_corpus.py`, `POST /admin/real-corpus/load`, admin →
+  Dashboard "Load real-world corpus"): 30 excerpts of genuinely published public
+  documents (NIST SP 800-118 vs 800-63B, PCI DSS 3.2.1 vs 4.0, GDPR Art. 33 + EDPB, WHO +
+  CDC hand hygiene, RFCs, OWASP, ISO 27001, WCAG, PEP 8 …). Only 10 ground-truth labels
+  (2 stale, 2 duplicate, 2 unsupported, 2 injection incl. 1 held out, 2 benign) tagged
+  `source: "real"`; the remaining documents are ingested **unlabeled**.
+- **Bulk upload** (`lib/bulk.py`, `POST /documents/bulk`, reviewer+ → Dashboard
+  "Upload your own documents"): CSV / JSON / JSONL / .txt / .md, keys `title`, `text`
+  (+ optional `source_type`, `doc_date`); 10 MB and 2000-doc limits; duplicate titles are
+  skipped; every doc runs the standard pipeline so the injection scan precedes indexing.
+- Evaluation reports `coverage {total_docs, labeled_docs, unlabeled_docs}`; unlabeled real
+  documents are scanned but never scored, and the disclaimer says so.
+- Dashboard has **no** "Recent activity" card (removed by user request) — the full
+  hash-chained history lives on the Audit Log page; `/stats` no longer returns
+  `recent_activity`.
+
 ## Seed data
 - Demo corpus (~73 docs + eval labels) loads idempotently via **Dashboard → Load demo
   corpus** (admin) or `python seed.py` — includes 8 contradiction pairs (3 paraphrased

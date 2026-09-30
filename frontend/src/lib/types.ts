@@ -143,6 +143,28 @@ export interface ActivityEntry {
   detail: Record<string, unknown>;
 }
 
+export interface BulkUploadResult {
+  found: number;
+  ingested: number;
+  quarantined: number;
+  skipped_duplicate_titles: number;
+  docs_total: number;
+}
+
+export interface CorpusLoadResult {
+  ingested: number;
+  quarantined: number;
+  labels: number;
+  unlabeled: number;
+  docs_total: number;
+}
+
+export interface EvalCoverage {
+  total_docs: number;
+  labeled_docs: number;
+  unlabeled_docs: number;
+}
+
 export interface Stats {
   documents: number;
   quarantined: number;
@@ -151,7 +173,6 @@ export interface Stats {
   ledger_versions: number;
   pipeline: PipelineStrip;
   findings_by_type: Record<string, number>;
-  recent_activity: ActivityEntry[];
   auto_apply_enabled: boolean;
   provider: { llm: string; embeddings: string };
   last_scan: ScanRun | null;
@@ -234,6 +255,7 @@ export interface EvalReport {
   false_positive_rate: number;
   benchmark: BenchmarkResult | null;
   labels: number;
+  coverage?: EvalCoverage;
   imported: ImportedReport | null;
   disclaimer: string;
 }

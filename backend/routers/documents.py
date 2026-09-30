@@ -1,15 +1,36 @@
 """Document routes: ingest (with injection defense), list, version history, and the
 admin-only rollback that appends the old text as a NEW version (nothing is deleted)."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
+from lib.bulk import BulkError, bulk_ingest
 from lib.db import db
 from lib.deps import require_admin, require_reviewer, require_viewer
 from lib.ingest import clean_doc, ingest_document
 from lib.ledger import append_audit, append_version
-from models.models import Document, DocumentCreate, VersionOut
+from models.models import BulkUploadResult, Document, DocumentCreate, VersionOut
 
 router = APIRouter(tags=["documents"])
+
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # request size limit (spec 3)
+
+
+@router.post("/documents/bulk", response_model=BulkUploadResult)
+async def bulk_upload(file: UploadFile = File(...),
+                      user: dict = Depends(require_reviewer)) -> BulkUploadResult:
+    """Bulk-ingest a reviewer's own real documents (CSV / JSON / JSONL / txt / md).
+
+    Every document runs through the standard ingestion pipeline, so the injection scan
+    still happens BEFORE indexing and poisoned files are quarantined on arrival.
+    """
+    raw = await file.read()
+    if len(raw) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File is larger than the 10 MB limit")
+    try:
+        res = await bulk_ingest(raw, file.filename or "upload", user["username"])
+    except BulkError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return BulkUploadResult(**res)
 
 
 @router.post("/documents", response_model=Document)

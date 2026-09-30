@@ -66,14 +66,31 @@ export default function EvaluationPage() {
       {/* disclaimer — always visible (spec 12) */}
       <div data-testid="eval-disclaimer" className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-        Note: {evalQ.data?.disclaimer ?? "synthetic-corpus benchmark metrics reflect offline test suites and not live production variance."}
+        Note: {evalQ.data?.disclaimer ?? "metrics are measured on the labeled slice only and do not reflect live production variance."}
       </div>
+
+      {report?.coverage && (
+        <div
+          data-testid="eval-coverage"
+          className="flex flex-wrap items-center gap-x-6 gap-y-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600"
+        >
+          <span>
+            <span className="font-semibold text-slate-900" data-testid="eval-coverage-total">{report.coverage.total_docs}</span> documents in the knowledge base
+          </span>
+          <span>
+            <span className="font-semibold text-emerald-700" data-testid="eval-coverage-labeled">{report.coverage.labeled_docs}</span> labeled &amp; scored
+          </span>
+          <span>
+            <span className="font-semibold text-slate-500" data-testid="eval-coverage-unlabeled">{report.coverage.unlabeled_docs}</span> unlabeled — scanned, not scored
+          </span>
+        </div>
+      )}
 
       {!report ? (
         <Card>
           <CardContent className="flex h-48 flex-col items-center justify-center gap-2 text-sm text-slate-400">
             <Gauge className="h-6 w-6" />
-            No evaluation report yet — load the demo corpus (Dashboard, admin) and run the evaluation.
+            No evaluation report yet — load a corpus or upload your own documents (Dashboard) and run the evaluation.
           </CardContent>
         </Card>
       ) : (

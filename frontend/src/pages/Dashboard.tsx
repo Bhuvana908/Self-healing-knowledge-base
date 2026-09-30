@@ -5,8 +5,9 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { Database, FileWarning, Gavel, History, UserCheck } from "lucide-react";
 
 import { apiGet, apiPost } from "@/lib/api";
-import type { Stats, User } from "@/lib/types";
+import type { CorpusLoadResult, Stats, User } from "@/lib/types";
 import { formatError, RunScanButton } from "@/components/AppShell";
+import { BulkUploadCard } from "@/components/BulkUploadCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -53,6 +54,20 @@ export default function Dashboard() {
     onError: (e) => toast.error(formatError(e)),
   });
 
+  const realCorpus = useMutation({
+    mutationFn: () => apiPost<CorpusLoadResult>("/admin/real-corpus/load"),
+    onSuccess: (r) => {
+      toast.success(`Real-world corpus loaded — ${r.ingested} documents ingested`, {
+        description: `${r.quarantined} quarantined · ${r.labels} ground-truth labels · the rest is unlabeled real data. Run a scan next.`,
+      });
+      qc.invalidateQueries({ queryKey: ["stats"] });
+      qc.invalidateQueries({ queryKey: ["documents"] });
+      qc.invalidateQueries({ queryKey: ["ledger", "verify"] });
+      qc.invalidateQueries({ queryKey: ["evaluation"] });
+    },
+    onError: (e) => toast.error(formatError(e)),
+  });
+
   const s = stats.data;
   const chartData = FINDING_TYPES.map((t) => ({ type: t, count: s?.findings_by_type?.[t] ?? 0 }));
 
@@ -66,6 +81,17 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Button
+              variant="default"
+              size="sm"
+              data-testid="btn-load-real-corpus"
+              disabled={realCorpus.isPending}
+              onClick={() => realCorpus.mutate()}
+            >
+              {realCorpus.isPending ? "Loading…" : "Load real-world corpus"}
+            </Button>
+          )}
           {isAdmin && (
             <Button
               variant="outline"
@@ -111,9 +137,9 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-6">
         {/* findings-by-type chart */}
-        <Card className="lg:col-span-7">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Findings by type</CardTitle>
             <CardDescription>All recorded findings, including resolved ones.</CardDescription>
@@ -130,38 +156,16 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
-        {/* recent activity */}
-        <Card className="lg:col-span-5">
-          <CardHeader>
-            <CardTitle className="text-base">Recent activity</CardTitle>
-            <CardDescription>Hash-chained audit trail (latest first).</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2" data-testid="recent-activity-list">
-            {(s?.recent_activity ?? []).map((a) => (
-              <div key={a.seq} className="flex items-start justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-                <div className="min-w-0">
-                  <div className="truncate text-sm text-slate-800">
-                    <span className="font-medium">{a.actor}</span> · {a.action} · {a.target.slice(0, 14)}
-                  </div>
-                  <div className="text-xs text-slate-400">{new Date(a.ts).toLocaleString()}</div>
-                </div>
-                <span className="font-mono text-[11px] text-slate-400">#{a.seq}</span>
-              </div>
-            ))}
-            {(s?.recent_activity ?? []).length === 0 && (
-              <p className="text-sm text-slate-400">No activity yet — ingest documents or load the demo corpus.</p>
-            )}
-          </CardContent>
-        </Card>
       </div>
+
+      {role !== "viewer" && <BulkUploadCard />}
 
       {/* empty-state CTA */}
       {s && s.documents === 0 && (
         <Card className="border-indigo-200 bg-indigo-50">
           <CardContent className="p-6 text-center">
             <p className="text-sm text-indigo-900">
-              The knowledge base is empty. {isAdmin ? "Load the demo corpus to explore all fault types, or ingest documents via the API." : "Ask an admin to load the demo corpus."}
+              The knowledge base is empty. {isAdmin ? "Load the real-world corpus to explore the engine on genuinely published documents, or upload your own file below." : "Ask an admin to load a corpus, or upload your own documents below."}
             </p>
           </CardContent>
         </Card>

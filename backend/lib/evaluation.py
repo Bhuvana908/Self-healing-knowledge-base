@@ -13,8 +13,10 @@ from lib import detect, ingest
 from lib.db import client, db
 from lib.ledger import append_audit
 
-DISCLAIMER = ("Scores are measured on the synthetic demo corpus with planted faults — "
-              "they reflect the offline rule engine on this test set, not live production accuracy.")
+DISCLAIMER = ("Scores are measured only on the labeled slice of the knowledge base. Real-world "
+              "documents have no ground-truth labels, so unlabeled documents are ingested and "
+              "scanned but never scored — these numbers are a test-set signal, not live "
+              "production accuracy.")
 IMPORTED_NOTE = ("Imported-dataset scores are computed on your own labeled documents, split "
                  "deterministically 60/20/20; the test slice is never used for tuning.")
 
@@ -123,6 +125,19 @@ async def run_evaluation(actor: str) -> dict:
     conflicts = [c for c in (await db.conflicts.find({}).to_list(50000)) if c["status"] in MATCH_STATUSES]
     quarantined = {d["id"] for d in (await db.docs.find({"status": "quarantined"}).to_list(20000))}
 
+    labeled_docs: set[str] = set()
+    for l in labels:
+        labeled_docs.add(l.get("doc_a"))
+        if l.get("doc_b"):
+            labeled_docs.add(l["doc_b"])
+    labeled_docs.discard(None)
+    total_docs = await db.docs.count_documents({})
+    coverage = {
+        "total_docs": total_docs,
+        "labeled_docs": len(labeled_docs),
+        "unlabeled_docs": max(0, total_docs - len(labeled_docs)),
+    }
+
     demo_labels = [l for l in labels if l.get("source") != "imported"]
     imported = [l for l in labels if l.get("source") == "imported"]
 
@@ -159,6 +174,7 @@ async def run_evaluation(actor: str) -> dict:
         "false_positive_rate": fpr,
         "benchmark": None,
         "labels": len(demo_labels or labels),
+        "coverage": coverage,
         "imported": imported_report,
         "disclaimer": DISCLAIMER,
     }

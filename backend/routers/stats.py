@@ -1,4 +1,4 @@
-"""Dashboard aggregates: KPI counts, pipeline strip, findings-by-type, recent activity."""
+"""Dashboard aggregates: KPI counts, pipeline strip and findings-by-type."""
 
 from fastapi import APIRouter, Depends
 
@@ -38,12 +38,6 @@ async def stats(_: dict = Depends(require_viewer)) -> dict:
         "awaiting_human": awaiting,
     }
 
-    activity: list[dict] = []
-    async for a in db.audit.find().sort("seq", -1).limit(8):
-        a.pop("_id", None)
-        activity.append({"seq": a["seq"], "ts": a["ts"], "actor": a["actor"],
-                         "action": a["action"], "target": a["target"], "detail": a.get("detail", {})})
-
     settings = await get_settings()
     return {
         "documents": documents,
@@ -53,7 +47,6 @@ async def stats(_: dict = Depends(require_viewer)) -> dict:
         "ledger_versions": ledger_versions,
         "pipeline": pipeline,
         "findings_by_type": findings_by_type,
-        "recent_activity": activity,
         "auto_apply_enabled": settings["auto_apply_enabled"],
         "provider": {"llm": llm_provider(), "embeddings": embeddings_provider()},
         "last_scan": {k: last_scan[0][k] for k in _LAST_SCAN_FIELDS} if last_scan else None,

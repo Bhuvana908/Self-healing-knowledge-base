@@ -147,3 +147,20 @@ class ThresholdsUpdate(BaseModel):
 
 class AutoApplyToggle(BaseModel):
     enabled: bool
+
+
+# --- bulk upload / real corpus ---------------------------------------------------------------
+class BulkUploadResult(BaseModel):
+    found: int
+    ingested: int
+    quarantined: int
+    skipped_duplicate_titles: int
+    docs_total: int
+
+
+class CorpusLoadResult(BaseModel):
+    ingested: int
+    quarantined: int
+    labels: int
+    unlabeled: int
+    docs_total: int
