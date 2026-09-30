@@ -25,9 +25,15 @@ export function BulkUploadCard() {
   const upload = useMutation({
     mutationFn: uploadDocuments,
     onSuccess: (r) => {
-      toast.success(`${r.ingested} of ${r.found} documents ingested`, {
-        description: `${r.quarantined} quarantined by the injection scan · ${r.skipped_duplicate_titles} skipped (title already in the KB) · ${r.docs_total} documents total. Run a scan to detect faults.`,
-      });
+      if (r.ingested === 0) {
+        toast.info(`${r.found} document(s) already in the knowledge base`, {
+          description: "Documents are matched by title, so nothing was duplicated. Rename the title (or edit the file) to ingest a new revision.",
+        });
+      } else {
+        toast.success(`${r.ingested} of ${r.found} documents ingested`, {
+          description: `${r.quarantined} quarantined by the injection scan · ${r.skipped_duplicate_titles} skipped (title already in the KB) · ${r.docs_total} documents total. Run a scan to detect faults.`,
+        });
+      }
       qc.invalidateQueries({ queryKey: ["stats"] });
       qc.invalidateQueries({ queryKey: ["documents"] });
       qc.invalidateQueries({ queryKey: ["ledger", "verify"] });

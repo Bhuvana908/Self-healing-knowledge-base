@@ -57,9 +57,15 @@ export default function Dashboard() {
   const realCorpus = useMutation({
     mutationFn: () => apiPost<CorpusLoadResult>("/admin/real-corpus/load"),
     onSuccess: (r) => {
-      toast.success(`Real-world corpus loaded — ${r.ingested} documents ingested`, {
-        description: `${r.quarantined} quarantined · ${r.labels} ground-truth labels · the rest is unlabeled real data. Run a scan next.`,
-      });
+      if (r.ingested === 0) {
+        toast.info("Real-world corpus is already loaded", {
+          description: `All 30 documents are already in the knowledge base (${r.docs_total} documents total) · ${r.labels} ground-truth labels refreshed. Nothing was duplicated — run a scan to re-detect faults.`,
+        });
+      } else {
+        toast.success(`Real-world corpus loaded — ${r.ingested} documents ingested`, {
+          description: `${r.quarantined} quarantined · ${r.labels} ground-truth labels · the rest is unlabeled real data. Run a scan next.`,
+        });
+      }
       qc.invalidateQueries({ queryKey: ["stats"] });
       qc.invalidateQueries({ queryKey: ["documents"] });
       qc.invalidateQueries({ queryKey: ["ledger", "verify"] });
