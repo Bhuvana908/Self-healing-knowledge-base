@@ -1,0 +1,6 @@
+{
+  "name": "Self-Healing Knowledge Base",
+  "description": "Continuously audits enterprise knowledge for stale, duplicated, contradictory and unsupported claims, with Knowledge Graph multi-hop detection, Red-Team audit, hash-chained ledger, self-healing RAG before/after views, health scores, and PDF audit exports.",
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"],
+  "permissions": []
+}
