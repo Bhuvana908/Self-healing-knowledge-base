@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { FolderUp } from "lucide-react";
 
-import { ApiError } from "@/lib/api";
+import { ApiError, getStoredSessionUser } from "@/lib/api";
 import type { BulkUploadResult } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 async function uploadDocuments(file: File): Promise<BulkUploadResult> {
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch("/api/documents/bulk", { method: "POST", body: form });
+  const sessionUser = getStoredSessionUser();
+  const res = await fetch("/api/documents/bulk", {
+    method: "POST",
+    credentials: "include",
+    headers: sessionUser ? { "X-Session-User": sessionUser } : undefined,
+    body: form,
+  });
   if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => null));
   return (await res.json()) as BulkUploadResult;
 }

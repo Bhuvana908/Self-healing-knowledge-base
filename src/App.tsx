@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { BrowserRouter, Navigate, Route, Routes, useInRouterContext } from "react-router-dom";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
+import { queryClient } from "@/lib/queryClient";
 
 import { apiGet } from "@/lib/api";
 import type { NeedsSetup, User } from "@/lib/types";
@@ -23,7 +23,7 @@ import EvaluationPage from "@/pages/EvaluationPage";
 import AuditLog from "@/pages/AuditLog";
 import AdminPage from "@/pages/AdminPage";
 
-// Auth gate: verifies the httpOnly session cookie; routes to /setup on first run
+// Auth gate: verifies the session; routes to /setup on first run
 // (no default credentials exist), /login otherwise.
 function RequireAuth() {
   const me = useQuery({
@@ -49,7 +49,7 @@ function RequireAuth() {
   return <AppShell />;
 }
 
-export default function App() {
+function AppRoutes() {
   return (
     <>
       <Routes>
@@ -77,5 +77,20 @@ export default function App() {
       </Routes>
       <Toaster />
     </>
+  );
+}
+
+export default function App() {
+  const inRouter = useInRouterContext();
+  return (
+    <QueryClientProvider client={queryClient}>
+      {inRouter ? (
+        <AppRoutes />
+      ) : (
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      )}
+    </QueryClientProvider>
   );
 }

@@ -9,6 +9,7 @@ export default defineConfig({
     tailwindcss(),
   ],
   resolve: {
+    dedupe: ["react", "react-dom", "react-router", "react-router-dom"],
     alias: [
       { find: "@", replacement: path.resolve(__dirname, "./src") },
       { find: /^lucide-react$/, replacement: path.resolve(__dirname, "./src/lib/lucide-react.tsx") },
@@ -17,8 +18,20 @@ export default defineConfig({
       { find: "recharts-upstream", replacement: path.resolve(__dirname, "./node_modules/recharts") },
     ],
   },
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react-dom/client",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+      "react-router",
+      "react-router-dom",
+      "@tanstack/react-query",
+    ],
+  },
   server: {
     host: "0.0.0.0",
     port: 3000,
-  }
+  },
 });

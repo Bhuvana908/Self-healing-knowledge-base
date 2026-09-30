@@ -286,14 +286,6 @@ export interface BulkUploadResult {
   docs_total: number;
 }
 
-export interface CorpusLoadResult {
-  ingested: number;
-  quarantined: number;
-  labels: number;
-  unlabeled: number;
-  docs_total: number;
-}
-
 export interface CorpusState {
   active: "demo" | "real" | null;
   loaded_at: string | null;
@@ -309,6 +301,7 @@ export interface CorpusLoadResult {
   ingested: number;
   quarantined: number;
   labels: number;
+  unlabeled?: number;
   docs_total: number;
   loaded_at: string;
 }
@@ -422,13 +415,6 @@ export interface DatasetImportResult {
   labels: number;
   splits: { tune: number; validate: number; test: number };
   warnings: string[];
-}
-
-export interface LlmPing {
-  connected: boolean;
-  provider: string;
-  model?: string;
-  detail: string;
 }
 
 export interface EvalResponse {

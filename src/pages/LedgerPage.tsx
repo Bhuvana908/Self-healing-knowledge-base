@@ -260,7 +260,9 @@ export default function LedgerPage() {
             </label>
             <Select value={docId} onValueChange={(v) => { setDocId(v); setSelectedVersion(null); }}>
               <SelectTrigger className="w-full bg-white">
-                <SelectValue placeholder="Select an enterprise document…" />
+                <SelectValue>
+                  {docId ? (docs.data?.find((d) => d.id === docId)?.title ?? docId) : "Select an enterprise document…"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {(docs.data ?? []).map((d) => (
@@ -312,7 +314,12 @@ export default function LedgerPage() {
                   </div>
 
                   <div className="bg-white p-3 rounded border text-xs font-mono leading-relaxed">
-                    <WordDiff a={current.text} b={selected.text} />
+                    <WordDiff
+                      before={selected.text}
+                      after={current.text}
+                      beforeLabel={`v${selected.version_no} (selected)`}
+                      afterLabel={`v${current.version_no} (current)`}
+                    />
                   </div>
                 </div>
               )}

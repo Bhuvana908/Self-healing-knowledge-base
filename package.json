@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build",
-    "start": "NODE_ENV=production tsx server.ts",
-    "lint": "oxlint",
+    "start": "node server.ts",
+    "lint": "tsc --noEmit",
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {

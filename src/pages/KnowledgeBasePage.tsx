@@ -97,10 +97,12 @@ export default function KnowledgeBasePage() {
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-            <DialogTrigger asChild>
-              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5 shadow-sm">
-                <Plus className="h-4 w-4" /> Ingest Document
-              </Button>
+            <DialogTrigger
+              render={
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5 shadow-sm" />
+              }
+            >
+              <Plus className="h-4 w-4" /> Ingest Document
             </DialogTrigger>
             <DialogContent className="max-w-xl">
               <DialogHeader>

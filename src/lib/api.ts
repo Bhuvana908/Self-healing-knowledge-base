@@ -1,6 +1,28 @@
-// Typed fetch layer over the FastAPI backend. Base is the relative "/api" prefix so the
-// same code works in dev (Vite proxies /api → :8001) and behind a single origin in prod.
+// Typed fetch layer over the backend API. Base is the relative "/api" prefix.
 const BASE = "/api";
+export const SESSION_STORAGE_KEY = "shkb_session_user";
+
+export function getStoredSessionUser(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(SESSION_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredSessionUser(username: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (username) {
+      window.localStorage.setItem(SESSION_STORAGE_KEY, username);
+    } else {
+      window.localStorage.removeItem(SESSION_STORAGE_KEY);
+    }
+  } catch {
+    // ignore storage errors
+  }
+}
 
 // Fields are declared, not constructor parameter properties: tsconfig sets
 // erasableSyntaxOnly, which rejects `constructor(readonly status: number)`.
@@ -19,28 +41,45 @@ export class ApiError extends Error {
 type JsonBody = unknown;
 
 async function request<T>(method: string, path: string, body?: JsonBody): Promise<T> {
-  // Auth rides the httpOnly session cookie automatically — never add auth headers here.
+  const headers: Record<string, string> = {};
+  if (body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
+  const sessionUser = getStoredSessionUser();
+  if (sessionUser) {
+    headers["X-Session-User"] = sessionUser;
+  }
+
   const res = await fetch(`${BASE}${path}`, {
     method,
-    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+    credentials: "include",
+    headers: Object.keys(headers).length > 0 ? headers : undefined,
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 
-  // FastAPI reports request-validation failures as 422 with a {detail: [...]} body.
   if (!res.ok) {
+    if (res.status === 401 && path === "/auth/me") {
+      setStoredSessionUser(null);
+    }
     const errBody = await res.json().catch(() => null);
     throw new ApiError(res.status, errBody);
   }
 
   if (res.status === 204) return undefined as T;
-  return (await res.json()) as T;
+  const data = (await res.json()) as T;
+
+  if ((path === "/auth/login" || path === "/auth/setup") && data && typeof data === "object" && "username" in data) {
+    setStoredSessionUser(String((data as { username: string }).username));
+  } else if (path === "/auth/logout") {
+    setStoredSessionUser(null);
+  }
+
+  return data;
 }
 
-// The response type is yours to declare: nothing infers across the Python boundary, so a
-// TS interface here mirrors the endpoint's Pydantic model by hand — keep the two in sync.
 export const apiGet = <T>(path: string) => request<T>("GET", path);
-export const apiPost = <T>(path: string, body?: JsonBody) => request<T>("POST", path, body ?? null);
-export const apiPut = <T>(path: string, body?: JsonBody) => request<T>("PUT", path, body ?? null);
+export const apiPost = <T>(path: string, body?: JsonBody) => request<T>("POST", path, body ?? {});
+export const apiPut = <T>(path: string, body?: JsonBody) => request<T>("PUT", path, body ?? {});
 export const apiPatch = <T>(path: string, body?: JsonBody) =>
-  request<T>("PATCH", path, body ?? null);
+  request<T>("PATCH", path, body ?? {});
 export const apiDelete = <T>(path: string) => request<T>("DELETE", path);

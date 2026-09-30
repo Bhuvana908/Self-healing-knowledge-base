@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react";
 
@@ -15,8 +15,8 @@ import { Label } from "@/components/ui/label";
 // Split branded login: governance assurance panel left, credential card right.
 export default function Login() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("admin");
+  const [password, setPassword] = useState("admin1234");
 
   const status = useQuery({
     queryKey: ["auth", "status"],
@@ -72,7 +72,12 @@ export default function Login() {
           }}
           data-testid="login-form"
         >
-          <h2 className="text-xl font-semibold tracking-tight text-slate-900">Sign in</h2>
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">Sign in</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Sign in with an administrator, reviewer, or viewer account.
+            </p>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="login-username">Username</Label>
             <Input
@@ -106,6 +111,53 @@ export default function Login() {
           <Button type="submit" className="w-full" disabled={mut.isPending} data-testid="login-form-submit-button">
             {mut.isPending ? "Signing in…" : "Sign in"}
           </Button>
+
+          <div className="border-t border-slate-100 pt-3">
+            <div className="mb-2 text-[11px] font-medium uppercase tracking-wider text-slate-400">
+              Quick role presets
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                onClick={() => {
+                  setUsername("admin");
+                  setPassword("admin1234");
+                }}
+              >
+                Admin
+              </Button>
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                onClick={() => {
+                  setUsername("auditor");
+                  setPassword("auditor1234");
+                }}
+              >
+                Reviewer
+              </Button>
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                onClick={() => {
+                  setUsername("analyst");
+                  setPassword("analyst1234");
+                }}
+              >
+                Viewer
+              </Button>
+            </div>
+            <div className="mt-3 text-center text-xs text-slate-500">
+              Need a custom admin account?{" "}
+              <Link to="/setup" className="font-medium text-indigo-600 hover:underline">
+                Run setup
+              </Link>
+            </div>
+          </div>
         </form>
       </div>
     </div>

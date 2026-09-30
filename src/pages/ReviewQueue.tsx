@@ -7,7 +7,6 @@ import type { Conflict, User, VersionEntry } from "@/lib/types";
 import { formatError } from "@/components/AppShell";
 import { ConfidenceBar } from "@/components/ConfidenceBar";
 import { RouteBadge, SourceBadge, StatusBadge, TypeBadge } from "@/components/badges";
-import { WordDiff } from "@/components/WordDiff";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -63,12 +62,12 @@ function ConflictDetail({ conflict, role }: { conflict: Conflict; role: string }
   const qc = useQueryClient();
   const [merged, setMerged] = useState("");
   const isReviewer = role === "admin" || role === "reviewer";
-  const isAdmin = role === "admin";
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["conflicts"] });
     qc.invalidateQueries({ queryKey: ["stats"] });
     qc.invalidateQueries({ queryKey: ["ledger", "verify"] });
+    qc.invalidateQueries({ queryKey: ["health-score"] });
   };
 
   const resolve = useMutation({
@@ -94,7 +93,7 @@ function ConflictDetail({ conflict, role }: { conflict: Conflict; role: string }
     proposal.kind === "replace"
       ? proposal.new_sentence === conflict.text_a
       : proposal.kind === "remove"
-        ? proposal.doc_id === conflict.doc_b // removing B's sentence -> A recommended
+        ? proposal.doc_id === conflict.doc_b
         : false;
   const paneClass = (recommended: boolean) =>
     cn("rounded-lg border p-3", recommended ? "border-teal-500 bg-teal-50/40 ring-1 ring-teal-500" : "border-slate-200 bg-white");
@@ -139,6 +138,7 @@ function ConflictDetail({ conflict, role }: { conflict: Conflict; role: string }
           {proposal.kind === "none" && "No deterministic proposal — a human must decide (use Synthesize or Keep both)."}
           {proposal.kind === "replace" && `Replace the sentence in "${proposal.doc_id === conflict.doc_a ? conflict.doc_a_title : conflict.doc_b_title}" with the recommended one.`}
           {proposal.kind === "remove" && `Remove the duplicate/unsupported sentence from "${proposal.doc_id === conflict.doc_a ? conflict.doc_a_title : conflict.doc_b_title}".`}
+          {proposal.kind === "synthesize" && `Synthesize the claims in "${proposal.doc_id === conflict.doc_a ? conflict.doc_a_title : conflict.doc_b_title}".`}
         </div>
       </TabsContent>
 

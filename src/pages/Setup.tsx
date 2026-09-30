@@ -1,29 +1,22 @@
 import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react";
 
-import { ApiError, apiGet, apiPost } from "@/lib/api";
+import { apiGet, apiPost } from "@/lib/api";
 import { beginSession } from "@/lib/session";
-import type { NeedsSetup, User } from "@/lib/types";
-import { FullSplash } from "@/components/FullSplash";
+import type { User } from "@/lib/types";
 import { formatError } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-// First-run bootstrap: creates the very first admin. No default credentials exist anywhere.
+// First-run bootstrap: creates an admin account and signs in.
 export default function Setup() {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const status = useQuery({
-    queryKey: ["auth", "status"],
-    queryFn: () => apiGet<NeedsSetup>("/auth/status"),
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
   const me = useQuery({
     queryKey: ["auth", "me"],
     queryFn: () => apiGet<User>("/auth/me"),
@@ -39,8 +32,6 @@ export default function Setup() {
     },
   });
 
-  if (status.isPending || status.isLoading) return <FullSplash label="Preparing first-run setup" />;
-  if (status.data && !status.data.needs_setup) return <Navigate to="/login" replace />;
   if (me.isSuccess) return <Navigate to="/" replace />;
 
   return (
@@ -52,7 +43,7 @@ export default function Setup() {
           </span>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Self-Healing Knowledge Base</h1>
           <p className="mt-1 text-sm text-slate-500">
-            First run: create the first administrator. The signing key is verified, and no default credentials exist.
+            Create an administrator account and initialize your session.
           </p>
         </div>
         <form
@@ -98,6 +89,12 @@ export default function Setup() {
           <Button type="submit" className="w-full" disabled={mut.isPending} data-testid="setup-form-submit-button">
             {mut.isPending ? "Creating…" : "Create admin & initialize ledger"}
           </Button>
+          <div className="text-center text-xs text-slate-500">
+            Already have an account?{" "}
+            <Link to="/login" className="font-medium text-indigo-600 hover:underline">
+              Sign in
+            </Link>
+          </div>
         </form>
       </div>
     </div>
