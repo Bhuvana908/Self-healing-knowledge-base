@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import crypto from "node:crypto";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -1686,10 +1687,26 @@ async function startServer() {
   } else {
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
+      root: __dirname,
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
+
+    // SPA fallback: serves Vite transformed index.html for all non-API routes
+    app.use("*", async (req: Request, res: Response, next) => {
+      const url = req.originalUrl;
+      if (url.startsWith("/api")) return next();
+      try {
+        const indexPath = path.resolve(__dirname, "index.html");
+        let template = await fs.promises.readFile(indexPath, "utf-8");
+        template = await vite.transformIndexHtml(url, template);
+        res.status(200).set({ "Content-Type": "text/html" }).end(template);
+      } catch (e) {
+        vite.ssrFixStacktrace(e as Error);
+        next(e);
+      }
+    });
   }
 
   app.listen(PORT, "0.0.0.0", () => {
