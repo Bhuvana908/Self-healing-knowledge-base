@@ -1420,20 +1420,14 @@ const AUTH_COOKIE = "shkb_auth_session";
 
 function getAuthenticatedUser(req: Request) {
   const headerUser = req.headers["x-session-user"];
-  const username =
-    (typeof headerUser === "string" && headerUser.trim()) ||
-    req.cookies?.[AUTH_COOKIE];
+  const username = typeof headerUser === "string" ? headerUser.trim() : "";
   if (!username) return null;
   return users.find((u) => u.username === username) || null;
 }
 
-function setAuthSession(res: Response, username: string) {
-  res.cookie(AUTH_COOKIE, username, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 24 * 3600 * 1000,
-  });
+function setAuthSession(res: Response, _username: string) {
+  // Clear any legacy persistent cookie so every fresh website entry requires sign-in
+  res.clearCookie(AUTH_COOKIE, { path: "/" });
 }
 
 // --- API Routes Implementation ---

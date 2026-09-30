@@ -18,25 +18,20 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// Past Original Version Navigation Tabs (100% Preserved)
-const ORIGINAL_NAV = [
+const SYSTEM_FEATURES_NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
   { to: "/review", label: "Review Queue", icon: ListChecks, adminOnly: false },
   { to: "/poison-lab", label: "Poison Lab", icon: FlaskConical, adminOnly: false },
   { to: "/ledger", label: "Ledger & Rollback", icon: Link2, adminOnly: false },
   { to: "/eval", label: "Evaluation", icon: Gauge, adminOnly: false },
   { to: "/audit", label: "Audit Log", icon: ScrollText, adminOnly: false },
-  { to: "/admin", label: "Admin", icon: Settings, adminOnly: true },
-];
-
-// New Shortlisted Features Added Below Original Tabs Without Overlapping
-const NEW_FEATURES_NAV = [
   { to: "/health-overview", label: "Health Score & Explainability", icon: Activity, adminOnly: false },
   { to: "/documents", label: "Knowledge Base", icon: BookOpen, adminOnly: false },
   { to: "/self-healing", label: "Self-Healing RAG", icon: Sparkles, adminOnly: false },
   { to: "/graph", label: "Knowledge Graph & Multi-Hop", icon: Network, adminOnly: false },
   { to: "/red-team", label: "Red-Team Audit Mode", icon: ShieldAlert, adminOnly: false },
   { to: "/reports", label: "PDF Audit Export", icon: FileText, adminOnly: false },
+  { to: "/admin", label: "Admin", icon: Settings, adminOnly: true },
 ];
 
 // Always-visible header pill: cryptographic hash-chain integrity (green / pulse / red).
@@ -178,8 +173,7 @@ export default function AppShell() {
   });
   const role = me.data?.role ?? "viewer";
 
-  const originalItems = ORIGINAL_NAV.filter((n) => !n.adminOnly || role === "admin");
-  const newItems = NEW_FEATURES_NAV.filter((n) => !n.adminOnly || role === "admin");
+  const navItems = SYSTEM_FEATURES_NAV.filter((n) => !n.adminOnly || role === "admin");
 
   return (
     <div className="min-h-svh bg-slate-50">
@@ -195,13 +189,12 @@ export default function AppShell() {
           </div>
         </div>
 
-        {/* SECTION 1: Original Tabs (Kept exactly as past version) */}
-        <div className="px-3">
+        <div className="px-3 pb-4">
           <div className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-            Core System
+            System Features
           </div>
           <nav className="space-y-0.5" data-testid="sidebar-nav">
-            {originalItems.map(({ to, label, icon: Icon }) => (
+            {navItems.map(({ to, label, icon: Icon }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -223,35 +216,6 @@ export default function AppShell() {
           </nav>
         </div>
 
-        {/* SECTION 2: New Features Added Below Without Overlapping */}
-        <div className="px-3 pt-3 pb-4">
-          <div className="border-t border-slate-800 mb-2.5" />
-          <div className="flex items-center gap-1.5 px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-sky-400">
-            <Sparkles className="h-3 w-3" />
-            <span>New Feature Extensions</span>
-          </div>
-          <nav className="space-y-0.5">
-            {newItems.map(({ to, label, icon: Icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                data-testid={`nav-${to.slice(1)}`}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-xs transition-colors duration-150",
-                    isActive
-                      ? "bg-slate-800 text-sky-400 font-medium shadow-[inset_2px_0_0_0_#38BDF8]"
-                      : "text-slate-300 hover:bg-slate-800 hover:text-white",
-                  )
-                }
-              >
-                <Icon className="h-3.5 w-3.5 shrink-0 text-indigo-400" />
-                <span className="truncate">{label}</span>
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-
         <div className="mt-auto border-t border-slate-800 px-5 py-3 text-[11px] text-slate-400 shrink-0">
           Document text is data, never instructions.
         </div>
@@ -267,41 +231,21 @@ export default function AppShell() {
           {me.data && <UserMenu user={me.data} />}
         </header>
 
-        {/* Mobile Navigation: Sectioned so tabs do not overlap */}
-        <nav className="flex flex-col border-b border-slate-200 bg-white px-3 py-2 md:hidden space-y-1.5" data-testid="mobile-nav">
-          <div className="flex items-center gap-1 overflow-x-auto pb-1">
-            <span className="text-[10px] font-semibold uppercase text-slate-400 shrink-0 mr-1">Core:</span>
-            {originalItems.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={to === "/"}
-                className={({ isActive }) =>
-                  cn("whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs shrink-0",
-                    isActive ? "bg-slate-900 text-white font-medium" : "bg-slate-100 text-slate-600")
-                }
-              >
-                {label}
-              </NavLink>
-            ))}
-          </div>
-          <div className="flex items-center gap-1 overflow-x-auto border-t border-slate-100 pt-1">
-            <span className="text-[10px] font-bold uppercase text-indigo-600 shrink-0 mr-1 flex items-center gap-0.5">
-              <Sparkles className="h-2.5 w-2.5" /> New:
-            </span>
-            {newItems.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  cn("whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs shrink-0",
-                    isActive ? "bg-indigo-600 text-white font-medium" : "bg-indigo-50 text-indigo-700")
-                }
-              >
-                {label}
-              </NavLink>
-            ))}
-          </div>
+        {/* Mobile Navigation: Unified single list */}
+        <nav className="flex items-center gap-1 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2 md:hidden" data-testid="mobile-nav">
+          {navItems.map(({ to, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === "/"}
+              className={({ isActive }) =>
+                cn("whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs shrink-0",
+                  isActive ? "bg-slate-900 text-white font-medium" : "bg-slate-100 text-slate-600")
+              }
+            >
+              {label}
+            </NavLink>
+          ))}
         </nav>
 
         <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8" data-testid="page-content">

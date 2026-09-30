@@ -2,26 +2,24 @@
 const BASE = "/api";
 export const SESSION_STORAGE_KEY = "shkb_session_user";
 
-export function getStoredSessionUser(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.localStorage.getItem(SESSION_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
+// In-memory session state: resets whenever the user enters or reloads the website
+// so that every fresh visit prompts for sign-in.
+let currentSessionUser: string | null = null;
 
-export function setStoredSessionUser(username: string | null): void {
-  if (typeof window === "undefined") return;
+if (typeof window !== "undefined") {
   try {
-    if (username) {
-      window.localStorage.setItem(SESSION_STORAGE_KEY, username);
-    } else {
-      window.localStorage.removeItem(SESSION_STORAGE_KEY);
-    }
+    window.localStorage.removeItem(SESSION_STORAGE_KEY);
   } catch {
     // ignore storage errors
   }
+}
+
+export function getStoredSessionUser(): string | null {
+  return currentSessionUser;
+}
+
+export function setStoredSessionUser(username: string | null): void {
+  currentSessionUser = username;
 }
 
 // Fields are declared, not constructor parameter properties: tsconfig sets

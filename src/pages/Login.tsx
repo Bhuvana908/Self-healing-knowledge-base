@@ -15,8 +15,8 @@ import { Label } from "@/components/ui/label";
 // Split branded login: governance assurance panel left, credential card right.
 export default function Login() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("admin1234");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
   const status = useQuery({
     queryKey: ["auth", "status"],
@@ -35,7 +35,7 @@ export default function Login() {
     mutationFn: () => apiPost<User>("/auth/login", { username, password }),
     onSuccess: () => {
       beginSession();
-      navigate("/");
+      navigate("/", { replace: true });
     },
   });
 
@@ -83,6 +83,7 @@ export default function Login() {
             <Input
               id="login-username"
               data-testid="login-username-input"
+              placeholder="Enter username (e.g. admin)"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
@@ -95,6 +96,7 @@ export default function Login() {
               id="login-password"
               data-testid="login-password-input"
               type="password"
+              placeholder="Enter password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
