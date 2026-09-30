@@ -30,7 +30,7 @@ from models.models import (
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 limiter = LoginRateLimiter()
-USERNAME_RE = re.compile(r"^[a-zA-Z0-9_.-]{3,40}$")
+USERNAME_RE = re.compile(r"^[a-zA-Z0-9_.@+-]{3,64}$")
 
 
 def _clean(user: dict) -> dict:
@@ -47,7 +47,7 @@ def _set_session_cookie(response: Response, username: str, role: str) -> None:
 
 def _validate_credentials(username: str, password: str) -> None:
     if not USERNAME_RE.match(username):
-        raise HTTPException(status_code=422, detail="Username must be 3-40 chars: letters, digits, dot, dash, underscore")
+        raise HTTPException(status_code=422, detail="Username must be 3-64 chars: letters, digits, dot, dash, underscore, @ or +")
     if len(password) < 8:
         raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
 

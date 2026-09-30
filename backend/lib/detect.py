@@ -4,6 +4,7 @@ scoring and routing. Works fully OFFLINE (TF-IDF + exact cosine kNN) and improve
 embedding/LLM provider is configured."""
 
 import hashlib
+import os
 import time
 import uuid
 from datetime import datetime, timezone
@@ -22,6 +23,11 @@ from lib.text import TfidfSpace, claim_key, content_tokens, extract_numbers, neg
 def _pair_id(type_: str, text_a: str, text_b: str) -> str:
     payload = f"{type_}|" + "|".join(sorted([text_a, text_b]))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+# Max label-only LLM judge calls per scan (protects free-tier quotas; the rest of the
+# ambiguous band falls back to the deterministic offline judge).
+LLM_JUDGE_MAX = int(os.environ.get("LLM_JUDGE_MAX", "25"))
 
 
 def _unsupported_id(text: str) -> str:
@@ -269,13 +275,22 @@ async def run_scan(actor: str, database=None) -> dict:
 
     candidates = _candidate_pairs(claims, space, int(th["knn_k"]), float(th["llm_band_sim"]))
 
-    # LLM judge (label only) for ambiguous pairs in the 0.45..0.60 band.
+    # LLM judge (label only) for ambiguous pairs in the 0.45..0.60 band. Capped and
+    # serialized: free-tier quotas return 429 under a burst, and every pair falls back to
+    # the offline Jaccard judge when no label comes back.
     band = [(i, j, s) for i, j, s in candidates if float(th["llm_band_sim"]) <= s < float(th["conflict_sim"])]
     judgements: dict[tuple[int, int], str | None] = {}
     if band and llm.provider() != "offline":
         import asyncio
-        results = await asyncio.gather(*[llm.judge_pair(claims[i]["text"], claims[j]["text"]) for i, j, _ in band])
-        judgements = {(i, j): (r or {}).get("label") if r else None for (i, j, _), r in zip(band, results)}
+        sem = asyncio.Semaphore(3)
+
+        async def _judge(i: int, j: int):
+            async with sem:
+                return await llm.judge_pair(claims[i]["text"], claims[j]["text"])
+
+        capped = sorted(band, key=lambda t: -t[2])[:LLM_JUDGE_MAX]
+        results = await asyncio.gather(*[_judge(i, j) for i, j, _ in capped])
+        judgements = {(i, j): (r or {}).get("label") for (i, j, _), r in zip(capped, results)}
 
     findings: list[dict] = []
     for i, j, sim in candidates:

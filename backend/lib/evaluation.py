@@ -1,6 +1,7 @@
 """Evaluation (spec 12): P/R/F1 per fault type with 95% bootstrap CIs, false-positive
-rate on clean documents, and a scale benchmark with planted near-duplicates run on a
-throwaway database. Scores come from the synthetic demo corpus — they are NOT production
+rate on clean documents, per-split metrics for imported datasets (60/20/20 tune/validate/
+test — the test slice is never used for tuning), and a scale benchmark with planted
+near-duplicates run on a throwaway database. Demo-corpus scores are NOT production
 accuracy, and the UI states this verbatim."""
 
 import random
@@ -14,6 +15,8 @@ from lib.ledger import append_audit
 
 DISCLAIMER = ("Scores are measured on the synthetic demo corpus with planted faults — "
               "they reflect the offline rule engine on this test set, not live production accuracy.")
+IMPORTED_NOTE = ("Imported-dataset scores are computed on your own labeled documents, split "
+                 "deterministically 60/20/20; the test slice is never used for tuning.")
 
 MATCH_STATUSES = {"open", "hold", "auto_applied", "accepted", "synthesized", "kept_both", "rolled_back"}
 FAULT_TYPES = ["contradiction", "duplicate", "stale", "unsupported"]
@@ -55,23 +58,33 @@ def _metrics(tp: int, fp: int, fn: int) -> dict:
 def _pair_match(finding: dict, label: dict) -> bool:
     if finding["type"] != label["kind"]:
         return False
-    fa = {finding.get("doc_a"), finding.get("doc_b")}
-    la = {label.get("doc_a"), label.get("doc_b")}
-    return fa == la
+    return {finding.get("doc_a"), finding.get("doc_b")} == {label.get("doc_a"), label.get("doc_b")}
 
 
-async def run_evaluation(actor: str) -> dict:
-    labels = await db.eval_labels.find().to_list(20000)
-    if not labels:
-        raise ValueError("Demo corpus is not loaded — an admin must load it first (Dashboard → Load demo corpus)")
+def _score(labels: list[dict], conflicts: list[dict], quarantined: set[str]) -> tuple[dict, float]:
+    """Per-type metrics + the false-positive rate on clean/benign documents.
 
-    conflicts = [c for c in (await db.conflicts.find({}).to_list(50000)) if c["status"] in MATCH_STATUSES]
-    quarantined = {d["id"] for d in (await db.docs.find({"status": "quarantined"}).to_list(20000))}
+    Findings are scoped to the documents this label set actually covers — otherwise an
+    imported dataset would count every demo-corpus finding as its own false positive.
+    """
+    scope: set[str] = set()
+    for l in labels:
+        scope.add(l.get("doc_a"))
+        if l.get("doc_b"):
+            scope.add(l["doc_b"])
+    scope.discard(None)
+
+    in_scope = [
+        c for c in conflicts
+        if c.get("doc_a") in scope and (c.get("doc_b") is None or c.get("doc_b") in scope)
+    ]
 
     per_type: dict[str, dict] = {}
     for kind in FAULT_TYPES:
         klabels = [l for l in labels if l["kind"] == kind]
-        kfindings = [c for c in conflicts if c["type"] == kind]
+        kfindings = [c for c in in_scope if c["type"] == kind]
+        if not klabels and not kfindings:
+            continue
         matched_labels: set[int] = set()
         matched_findings: set[int] = set()
         for fi, f in enumerate(kfindings):
@@ -86,30 +99,72 @@ async def run_evaluation(actor: str) -> dict:
                                   len(klabels) - len(matched_labels))
 
     inj_labels = [l for l in labels if l["kind"] == "injection"]
-    labeled_inj_ids = {l["doc_a"] for l in inj_labels}
-    inj_tp = sum(1 for l in inj_labels if l["doc_a"] in quarantined)
-    inj_fp = sum(1 for q in quarantined if q not in labeled_inj_ids)
-    per_type["injection"] = _metrics(inj_tp, inj_fp, len(inj_labels) - inj_tp)
+    if inj_labels:
+        labeled_inj = {l["doc_a"] for l in inj_labels}
+        inj_tp = sum(1 for l in inj_labels if l["doc_a"] in quarantined)
+        inj_fp = len([q for q in quarantined if q in scope and q not in labeled_inj])
+        per_type["injection"] = _metrics(inj_tp, inj_fp, len(inj_labels) - inj_tp)
 
-    held = [l for l in inj_labels if l.get("held_out")]
-    htp = sum(1 for l in held if l["doc_a"] in quarantined)
-    per_type["held_out_injection"] = _metrics(htp, inj_fp, len(held) - htp)
+        held = [l for l in inj_labels if l.get("held_out")]
+        if held:
+            htp = sum(1 for l in held if l["doc_a"] in quarantined)
+            per_type["held_out_injection"] = _metrics(htp, inj_fp, len(held) - htp)
 
     benign = [l for l in labels if l["kind"] == "benign"]
-    benign_flagged = sum(1 for l in benign if l["doc_a"] in quarantined)
-    fpr = benign_flagged / len(benign) if benign else 0.0
+    fpr = (sum(1 for l in benign if l["doc_a"] in quarantined) / len(benign)) if benign else 0.0
+    return per_type, round(fpr, 4)
+
+
+async def run_evaluation(actor: str) -> dict:
+    labels = await db.eval_labels.find().to_list(20000)
+    if not labels:
+        raise ValueError("No labeled data — load the demo corpus (Dashboard) or import a labeled dataset (Admin)")
+
+    conflicts = [c for c in (await db.conflicts.find({}).to_list(50000)) if c["status"] in MATCH_STATUSES]
+    quarantined = {d["id"] for d in (await db.docs.find({"status": "quarantined"}).to_list(20000))}
+
+    demo_labels = [l for l in labels if l.get("source") != "imported"]
+    imported = [l for l in labels if l.get("source") == "imported"]
+
+    per_type, fpr = _score(demo_labels or labels, conflicts, quarantined)
+
+    imported_report = None
+    if imported:
+        i_per_type, i_fpr = _score(imported, conflicts, quarantined)
+        per_split = {}
+        for split in ("tune", "validate", "test"):
+            subset = [l for l in imported if l.get("split") == split]
+            if not subset:
+                continue
+            s_per_type, s_fpr = _score(subset, conflicts, quarantined)
+            f1s = [m["f1"] for m in s_per_type.values()]
+            per_split[split] = {
+                "labels": len(subset),
+                "per_type": s_per_type,
+                "false_positive_rate": s_fpr,
+                "macro_f1": round(sum(f1s) / len(f1s), 3) if f1s else 0.0,
+            }
+        imported_report = {
+            "labels": len(imported),
+            "per_type": i_per_type,
+            "false_positive_rate": i_fpr,
+            "per_split": per_split,
+            "note": IMPORTED_NOTE,
+        }
 
     report = {
         "id": str(uuid.uuid4()),
         "ran_at": datetime.now(timezone.utc).isoformat(),
         "per_type": per_type,
-        "false_positive_rate": round(fpr, 4),
+        "false_positive_rate": fpr,
         "benchmark": None,
-        "labels": len(labels),
+        "labels": len(demo_labels or labels),
+        "imported": imported_report,
         "disclaimer": DISCLAIMER,
     }
     await db.eval_reports.insert_one(report.copy())
-    await append_audit(actor, "evaluation", "kb", {"fpr": report["false_positive_rate"]})
+    await append_audit(actor, "evaluation", "kb",
+                       {"fpr": report["false_positive_rate"], "imported": bool(imported_report)})
     report.pop("_id", None)
     return report
 
@@ -135,12 +190,11 @@ def _synthetic_docs(n: int) -> tuple[list[dict], int]:
                 f"Records for the {dept} office are retained for seven years. "
                 f"Escalations follow the regional escalation path.")
         if i >= 12 and i % 6 == 0:
-            # planted near-duplicate: prior doc's first sentence with one filler added
             j = i - 6
             prior_first = docs[j]["text"].split(". ")[0]
-            body = f"{prior_first} this year. Standard review meetings run {n2} minutes every week. " \
-                   f"Records for the {dept} office are retained for seven years. " \
-                   "Escalations follow the regional escalation path."
+            body = (f"{prior_first} this year. Standard review meetings run {n2} minutes every week. "
+                    f"Records for the {dept} office are retained for seven years. "
+                    "Escalations follow the regional escalation path.")
             planted += 1
         docs.append({
             "title": f"Ops briefing {i:03d} — {dept}",
@@ -160,9 +214,8 @@ async def run_benchmark(actor: str, n_docs: int = 300) -> dict:
             await ingest.ingest_document(d["title"], d["text"], d["source_type"], actor,
                                          doc_date=d["doc_date"], database=bench)
         run = await detect.run_scan(actor, database=bench)
-        await append_audit(actor, "benchmark", "kb",
-                           {"docs": n_docs, "seconds": run["seconds"]})
-        return {
+        await append_audit(actor, "benchmark", "kb", {"docs": n_docs, "seconds": run["seconds"]})
+        result = {
             "docs": n_docs,
             "claims": run["claims"],
             "candidate_pairs": run["pairs"],
@@ -171,5 +224,10 @@ async def run_benchmark(actor: str, n_docs: int = 300) -> dict:
             "seconds": run["seconds"],
             "ran_at": datetime.now(timezone.utc).isoformat(),
         }
+        # attach to the most recent report so the Evaluation page can show it
+        latest = await db.eval_reports.find().sort("ran_at", -1).to_list(1)
+        if latest:
+            await db.eval_reports.update_one({"id": latest[0]["id"]}, {"$set": {"benchmark": result}})
+        return result
     finally:
         await client.drop_database(bench_name)

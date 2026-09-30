@@ -4,8 +4,9 @@ import { toast } from "sonner";
 import { PlugZap } from "lucide-react";
 
 import { apiGet, apiPatch, apiPost, apiPut } from "@/lib/api";
-import type { LlmStatus, Settings, User } from "@/lib/types";
+import type { LlmPing, LlmStatus, Settings, User } from "@/lib/types";
 import { formatError } from "@/components/AppShell";
+import { DatasetImportCard } from "@/components/DatasetImportCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -76,14 +77,21 @@ export default function AdminPage() {
     onSuccess: () => { toast.success("Thresholds saved — the next scan uses them"); invalidate(); },
     onError: err,
   });
-  const changeRole = useMutation({
-    mutationFn: ({ username, role }: { username: string; role: string }) =>
+  const testLlm = useMutation({
+    mutationFn: () => apiPost<LlmPing>("/admin/llm-test"),
+    onSuccess: (r) => {
+      if (r.connected) toast.success(`Provider connected (${r.model ?? r.provider})`);
+      else toast.warning("Provider not reachable — detection stays on the offline engine");
+      qc.invalidateQueries({ queryKey: ["llm-status"] });
+    },
+    onError: err,
+  });
+  const changeRole = useMutation({    mutationFn: ({ username, role }: { username: string; role: string }) =>
       apiPatch(`/auth/users/${username}`, { role }),
     onSuccess: () => { toast.success("Role updated"); invalidate(); },
     onError: err,
   });
-  const createUser = useMutation({
-    mutationFn: () => apiPost("/auth/users", { username: newUsername, password: newPassword, role: newRole }),
+  const createUser = useMutation({    mutationFn: () => apiPost("/auth/users", { username: newUsername, password: newPassword, role: newRole }),
     onSuccess: () => {
       toast.success(`User ${newUsername} created`);
       setNewUserOpen(false);
@@ -202,11 +210,32 @@ export default function AdminPage() {
               <span className="text-slate-500">Embeddings</span>
               <span className="font-medium" data-testid="embeddings-provider-value">{llm.data?.embeddings ?? "…"}</span>
             </div>
+            <Button
+              size="sm" variant="outline" data-testid="btn-test-llm"
+              disabled={testLlm.isPending} onClick={() => testLlm.mutate()}
+            >
+              {testLlm.isPending ? "Testing…" : "Test connection"}
+            </Button>
+            {testLlm.data && (
+              <p
+                data-testid="llm-test-result"
+                className={`rounded-lg px-3 py-2 text-xs ${testLlm.data.connected ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-900"}`}
+              >
+                {testLlm.data.connected ? "Connected" : "Not connected"} — {testLlm.data.detail}
+              </p>
+            )}
             <p className="text-xs text-slate-400">
-              Offline mode: rules + TF-IDF fully power detection. Set GEMINI_API_KEY to enable the label-only Gemini judge (temperature 0, JSON output) and embeddings.
+              The judge is label-only and has no write access: it returns contradiction / duplicate / consistent,
+              an injection true/false, or a suggested merged sentence. Every write stays in deterministic code,
+              and detection falls back to rules + TF-IDF whenever the provider is unavailable.
             </p>
           </CardContent>
         </Card>
+
+        {/* labeled dataset import */}
+        <div className="lg:col-span-2">
+          <DatasetImportCard />
+        </div>
 
         {/* trust table */}
         <Card>

@@ -212,6 +212,21 @@ export interface BenchmarkResult {
   ran_at: string;
 }
 
+export interface EvalSplit {
+  labels: number;
+  per_type: Record<string, Metrics>;
+  false_positive_rate: number;
+  macro_f1: number;
+}
+
+export interface ImportedReport {
+  labels: number;
+  per_type: Record<string, Metrics>;
+  false_positive_rate: number;
+  per_split: Record<string, EvalSplit>;
+  note: string;
+}
+
 export interface EvalReport {
   id: string;
   ran_at: string;
@@ -219,7 +234,25 @@ export interface EvalReport {
   false_positive_rate: number;
   benchmark: BenchmarkResult | null;
   labels: number;
+  imported: ImportedReport | null;
   disclaimer: string;
+}
+
+export interface DatasetImportResult {
+  rows: number;
+  ingested: number;
+  reused: number;
+  quarantined: number;
+  labels: number;
+  splits: { tune: number; validate: number; test: number };
+  warnings: string[];
+}
+
+export interface LlmPing {
+  connected: boolean;
+  provider: string;
+  model?: string;
+  detail: string;
 }
 
 export interface EvalResponse {
@@ -237,4 +270,15 @@ export interface LlmStatus {
   llm: string;
   embeddings: string;
   offline_mode: boolean;
+  model?: string;
+  degraded?: boolean;
+  degraded_seconds?: number;
+}
+
+export interface LlmPing {
+  connected: boolean;
+  provider: string;
+  model?: string;
+  throttled?: boolean;
+  detail: string;
 }

@@ -142,14 +142,78 @@ export default function EvaluationPage() {
               </Table>
             </CardContent>
           </Card>
+
+          {/* imported labeled dataset — per-split metrics (deterministic 60/20/20) */}
+          {report.imported && (
+            <Card data-testid="imported-dataset-card" className="border-indigo-200">
+              <CardHeader>
+                <CardTitle className="text-base">Your imported dataset</CardTitle>
+                <CardDescription>
+                  {report.imported.labels} labels from your own documents · {report.imported.note}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Table data-testid="imported-metrics-table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fault type</TableHead>
+                      <TableHead>Precision</TableHead>
+                      <TableHead>Recall</TableHead>
+                      <TableHead>F1 (95% CI)</TableHead>
+                      <TableHead className="text-right">TP / FP / FN</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {Object.entries(report.imported.per_type).map(([t, m]) => (
+                      <TableRow key={t} data-testid={`imported-row-${t}`}>
+                        <TableCell className="capitalize">{t.replace(/_/g, " ")}</TableCell>
+                        <TableCell>{m.precision.toFixed(3)}</TableCell>
+                        <TableCell>{m.recall.toFixed(3)}</TableCell>
+                        <TableCell className="font-medium">{m.f1.toFixed(3)} [{m.ci.f1[0]}, {m.ci.f1[1]}]</TableCell>
+                        <TableCell className="text-right font-mono text-xs">{m.tp} / {m.fp} / {m.fn}</TableCell>
+                      </TableRow>
+                    ))}
+                    {Object.keys(report.imported.per_type).length === 0 && (
+                      <TableRow><TableCell colSpan={5} className="text-sm text-slate-400">
+                        No scored fault types yet — run a scan so findings exist, then re-run the evaluation.
+                      </TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3" data-testid="imported-splits">
+                  {(["tune", "validate", "test"] as const).map((split) => {
+                    const s = report.imported?.per_split?.[split];
+                    return (
+                      <div
+                        key={split}
+                        data-testid={`split-card-${split}`}
+                        className={`rounded-lg border p-3 ${split === "test" ? "border-teal-300 bg-teal-50/50" : "border-slate-200 bg-slate-50"}`}
+                      >
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500">
+                          {split} split{split === "test" ? " · never tuned on" : ""}
+                        </div>
+                        <div className="mt-1 text-xl font-semibold text-slate-900">{s ? s.macro_f1.toFixed(3) : "—"}</div>
+                        <div className="text-xs text-slate-500">
+                          macro F1 · {s ? `${s.labels} labels · FPR ${(s.false_positive_rate * 100).toFixed(1)}%` : "no labels"}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-slate-400">
+                  Import more labeled documents from Admin → Labeled dataset import, then re-run the evaluation.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </>
       )}
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base"><FlaskConical className="h-4 w-4 text-indigo-600" /> Recent scan runs</CardTitle>
-        </CardHeader>
-        <CardContent>
+        </CardHeader>        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
